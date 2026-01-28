@@ -45,4 +45,4 @@ class TechnicalIndicators:
         df_ind['MACD'] = macd_line
         df_ind['MACD_signal'] = signal_line
         return df_ind
-                                                   
+                                      
