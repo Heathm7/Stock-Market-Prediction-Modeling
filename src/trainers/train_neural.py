@@ -19,9 +19,9 @@ BATCH_SIZE = 32
 os.makedirs(MODEL_DIR, exists_ok=True)
 
 print(f"Loading market data...")
-df = load_market_data("data/your_prices.csv")
+df = load_market_data(symbols=["AAPL", "MSFT", "GOOG"])
 
-features = df.drop(columns=[TARGET_COLUMN, "Regime"])
+features = df.drop(columns=[TARGET_COLUMN, "Regime", "symbol", "timestamp"])
 target = df[TARGET_COLUMN]
 regimes = df["Regime"]
 

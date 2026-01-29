@@ -9,17 +9,14 @@ from data.data_loader import load_market_data
 from features.indicators import compute_indicators
 
 MODEL_DIR = "models/tree"
-TARGET_COLUMN = "Close"
-N_SPLITS = 5
+TARGET_COLUMN = "target"
 RANDOM_STATE = 42
+N_SPLITS = 5
 
 GBDT_PARAMS = {"n_estimators": 300, "learning_rate": 0.03, "max_depth": 4, "subsample": 0.8, "random_state": RANDOM_STATE}
 
 def prepare_dataset(df: pd.DataFrame):
-    df = compute_indicators(df)
-    df = df.dropna()
-
-    X = df.drop(columns=[TARGET_COLUMN])
+    X = df.drop(columns=[TARGET_COLUMN, "symbol", "timestamp", "regime"])
     y = df[TARGET_COLUMN]
     return X, y
 
@@ -53,9 +50,9 @@ def save_model(model, name:str):
     joblib.dump(model, path)
     print(f"Model saved to {path}")
 
-def main():
+def main(symbols=None):
     print(f"Loading market data...")
-    df = load_market_data()
+    df = load_market_data(symbols=symbols)
 
     print(f"Preparing dataset...")
     X, y = prepare_dataset(df)
@@ -65,5 +62,5 @@ def main():
     save_model(model, "gbdt_base")
 
 if __name__ == "__main__":
-    main()
+    main(symbols=["AAPL", "MSFT", "GOOG"])
 

@@ -1,8 +1,5 @@
 import os
-import random
 import joblib
-import numpy as np
-import pandas as pd
 from sklearn.linear_model import Ridge
 from sklearn.model_selection import TimeSeriesSplit
 from sklearn.metrics import mean_squared_error, r2_score
@@ -11,8 +8,7 @@ from stacking.stack import RegimeStack
 from models.linear.ridge_model import RidgeModel
 
 MODEL_DIR = "models/linear"
-TARGET_COLUMN = "Close"
-N_SPLITS = 5
+TARGET_COLUMN = "target"
 RANDOM_STATE = 42
 
 RIDGE_PARAMS = {"alpha": 1.0, "fit_intercept": True, "normalize": False, "random_state": RANDOM_STATE}
@@ -20,11 +16,11 @@ RIDGE_PARAMS = {"alpha": 1.0, "fit_intercept": True, "normalize": False, "random
 os.makedirs(MODEL_DIR, exists_ok=True)
 
 print(f"Loading market data...")
-df = load_market_data("data/your_prices.csv")
+df = load_market_data(symbols=["AAPL", "MSFT", "GOOG"])
 
 features = df.drop(columns=[TARGET_COLUMN, "Regime"])
 target = df[TARGET_COLUMN]
-
+regimes = df["regime"]
 train_size = 0.8
 split_index = int(len(df) * train_size)
 X_train, X_test = features[:split_index], features[split_index:]
