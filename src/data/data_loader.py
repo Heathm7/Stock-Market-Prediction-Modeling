@@ -43,7 +43,10 @@ class MarketDataLoader:
         df = df.ffill()
         return df
 
-        
+def load_market_data(filepath: Optional[str] = "data/sample.csv") -> pd.DataFrame:
+    loader = MarketDataLoader()
+    return loader.load_from_csv(filepath)
+
 
 
 

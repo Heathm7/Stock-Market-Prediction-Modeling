@@ -25,6 +25,10 @@ class RegimeDetector:
         self.df[column_name] = self.classify_regimes()
         return self.df
 
+def detect_market_regime(df: pd.DataFrame) -> pd.DataFrame:
+    detector = RegimeDetector(df)
+    return detector.add_regime_column()
+
 
 
 

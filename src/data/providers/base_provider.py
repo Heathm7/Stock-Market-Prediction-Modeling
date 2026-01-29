@@ -1,5 +1,9 @@
-class my_class(object):
-    pass
+from abc import ABC, abstractmethod
+import pandas as pd
+
+class MarketDataProvider(ABC):
+    @abstractmethod
+    def fetch_historical_data(self, symbol: str, interval: str, start: str | None = None, end: str | None = None) -> pd.DataFrame: pass
 
 
 

@@ -46,3 +46,7 @@ class TechnicalIndicators:
         df_ind['MACD_signal'] = signal_line
         return df_ind
                                       
+def compute_indicators(df: pd.DataFrame, price_col: str = "Close") -> pd.DataFrame:
+    ti = TechnicalIndicators(df)
+    return ti.generate_all_indicators()
+
