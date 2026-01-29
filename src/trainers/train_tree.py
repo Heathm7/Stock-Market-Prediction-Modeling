@@ -50,17 +50,12 @@ def save_model(model, name:str):
     joblib.dump(model, path)
     print(f"Model saved to {path}")
 
-def main(symbols=None):
-    print(f"Loading market data...")
-    df = load_market_data(symbols=symbols)
-
-    print(f"Preparing dataset...")
+def train_pipeline(df):
+    print("[Tree Trainer] Preparing dataset")
     X, y = prepare_dataset(df)
 
-    print(f"Training GBDT model...")
+    print("[Tree Trainer] Training GBDT model...")
     model = train_gbdt(X, y)
     save_model(model, "gbdt_base")
-
-if __name__ == "__main__":
-    main(symbols=["AAPL", "MSFT", "GOOG"])
+    return model
 

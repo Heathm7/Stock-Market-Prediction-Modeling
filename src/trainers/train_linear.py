@@ -13,33 +13,29 @@ RANDOM_STATE = 42
 
 RIDGE_PARAMS = {"alpha": 1.0, "fit_intercept": True, "normalize": False, "random_state": RANDOM_STATE}
 
-os.makedirs(MODEL_DIR, exists_ok=True)
+def prepare_dataset(df):
+    X = df.drop(columns=[TARGET_COLUMN, "symbol", "timestamp", "Regime"])
+    y = df[TARGET_COLUMN]
+    regimes = df["Regime"]
+    return X, y, regimes
 
-print(f"Loading market data...")
-df = load_market_data(symbols=["AAPL", "MSFT", "GOOG"])
+def save_model(model, name: str):
+    os.makedirs(MODEL_DIR, exist_ok=True)
+    path = os.path.join(MODEL_DIR, f"{name}.pkl")
+    joblib.dump(model, path)
+    print(f"Linear model saved to {path}")
 
-features = df.drop(columns=[TARGET_COLUMN, "Regime"])
-target = df[TARGET_COLUMN]
-regimes = df["regime"]
-train_size = 0.8
-split_index = int(len(df) * train_size)
-X_train, X_test = features[:split_index], features[split_index:]
-y_train, y_test = target[:split_index], target[split_index:]
-regimes_train = df["Regime"][:split_index]
-regimes_test = df["Regime"][split_index:]
+def train_pipeline(df):
+    print("[Linear Trainer] Preparing dataset...")
+    X, y, regimes = prepare_dataset(df)
 
-linear_stack = RegimeStack(primary_model_cls=RidgeModel, primary_model_params=RIDGE_PARAMS, secondary_model_cls=None, regimes=[0, 1, 2, 3, 4])
-linear_stack.fit(X_train, y_train, regimes_train)
+    print("[Linear Trainer] Initializing RegimeStack...")
+    linear_stack = RegimeStack(primary_model_cls=RidgeModel, primary_model_params=RIDGE_PARAMS, secondary_model_cls=None, regimes=[0, 1, 2, 3, 4])
 
-y_pred = linear_stack.predict(X_test, regimes_test)
+    print("[Linear Trainer] Fitting RegimeStack...")
+    linear_stack.fit(X, y, regimes)
 
-mse = mean_squared_error(y_test, y_pred)
-r2 = r2_score(y_test, y_pred)
-print(f"Linear Stack Test MSE: {mse:.6f}, R2: {r2:.6f}")
-
-model_path = os.path.join(MODEL_DIR, "linear_stack.pkl")
-joblib.dump(linear_stack, model_path)
-print(f"Linear stack saved to {model_path}")
-
+    save_model(linear_stack, "linear_stack")
+    return linear_stack
 
 

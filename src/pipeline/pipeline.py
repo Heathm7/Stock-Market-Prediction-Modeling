@@ -1,23 +1,26 @@
 from curses import raw
-from typing import Dict, Any
+from typing import Dict, Any, List
 import numpy as np
-from data.api_client import MarketAPIClient
+import pandas as pd
+from data import api_client
+from data.apli_client_mongo import update_symbols
 from data.data_loader import MarketDataLoader
 from features.indicators import TechnicalIndicators
-from regime import regime_detector
 from regime.regime_detector import RegimeDetector
 from stacking.stack import RegimeStack
 from models.base_model import BaseModel
 
 class PredictionPipeline:
-    def __init__(self, api_client: MarketAPIClient, stack: RegimeStack, indicator_engine: TechnicalIndicators = None, regime_detector: RegimeDetector = None):
-        self.api_client = api_client
+    def __init__(self, stack: RegimeStack, indicator_engine: TechnicalIndicators = None, regime_detector: RegimeDetector = None):
         self.data_loader = MarketDataLoader()
         self.indicator_engine = indicator_engine or TechnicalIndicators()
         self.regime_detector = regime_detector or RegimeDetector()
         self.stack = stack
 
-    def run(self, symbol: str, interval: str = "5min", lookback: int = 200) -> Dict[str, Any]:
+    def run(self, symbol: str, interval: str = "5min", lookback: int = 200):
+        from data.api_client import MarketAPIClient
+
+        api_client = MarketAPIClient()
         raw_data = self.api_client.fetch_intraday(symbol=symbol, interval=interval)
 
         if not raw_data or len(raw_data) < lookback:
@@ -39,6 +42,12 @@ class PredictionPipeline:
         
         prediction = self.stack.predict(X, regime_score)
         return {"symbol": symbol, "interval:": interval, "regime_score": float(regime_score), "regime_label": regime_label, "prediction": float(prediction), "num_features": X.shape[1], "num_samples": X.shape[0]}
+
+    def load_from_mongo(self, symbols: List[str] = None) -> pd.DataFrame:
+        print(f"[Pipeline] Loading data from MongoDB...")
+        df = self.data_loader.load_market_data(symbols=symbols)
+        print(f"[Pipeline] Loaded {len{df}} rows from MongoDB")
+        return df
 
     @staticmethod
     def _label_regime(regime_score: float) -> str:

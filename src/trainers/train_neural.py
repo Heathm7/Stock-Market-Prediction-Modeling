@@ -16,31 +16,30 @@ LR = 0.001
 EPOCHS = 100
 BATCH_SIZE = 32
 
-os.makedirs(MODEL_DIR, exists_ok=True)
+def same_model(model, scaler, name="neural_stack_lstm"):
+    os.makedirs(MODEL_DIR, exists_ok=True)
+    path = os.path.join(MODEL_DIR, f"{name}.pkl")
+    joblib.dump({"model": model, "scaler": scaler}, path)
+    print(f"Neural LSTM model saved to {path}")
 
-print(f"Loading market data...")
-df = load_market_data(symbols=["AAPL", "MSFT", "GOOG"])
+def train_pipeline(df: pd.DataFrame):
+    print("[Neural Trainer] Preparing high-volatility data...")
+    features = df.drop(columns=[TARGET_COLUMN, "Regime", "symbol", "timestamp"])
+    target = df[TARGET_COLUMN]
+    regimes = df["Regime"]
 
-features = df.drop(columns=[TARGET_COLUMN, "Regime", "symbol", "timestamp"])
-target = df[TARGET_COLUMN]
-regimes = df["Regime"]
+    high_vol_mask = regimes >= 3
+    features_hv = features[high_vol_mask].reset_index(drop=True)
+    target_hv = target[high_vol_mask].reset_index(drop=True)
 
-high_vol_mask = regimes >= 3
-features_hv = features[high_vol_mask].reset_index(drop=True)
-target_hv = target[high_vol_mask].reset_index(drop=True)
+    if len(features_hv) < SEQ_LEN:
+        raise ValueError(f"Not enough high-volatility data for LSTM sequences.")
 
-if len(features_hv) < SEQ_LEN:
-    raise ValueError(f"Not enough high-volatility data for LSTM sequences.")
+    scaler = StandardScaler()
+    features_scaled = pd.DataFrame(scaler.fit_transform(features_hv), columns=features_hv.columns)
+    input_dim = features_scaled.shape[1]
+    lstm_model = LSTMModel(input_dim=input_dim, hidden_dim=HIDDEN_DIM, num_layers=NUM_LAYERS, dropout=DROPOUT, lr=LR, epochs=EPOCHS, batch_size=BATCH_SIZE, seq_len=SEQ_LEN)
 
-scaler = StandardScaler()
-features_scaled = pd.DataFrame(scaler.fit_transform(features_hv), columns=features_hv.columns)
+    print(f"Training LSTM neural model on high-volatility regimes...")
+    lstm_model.fit(features_scaled, target_hv)
 
-input_dim = features_scaled.shape[1]
-lstm_model = LSTMModel(input_dim=input_dim, hidden_dim=HIDDEN_DIM, num_layers=NUM_LAYERS, dropout=DROPOUT, lr=LR, epochs=EPOCHS, batch_size=BATCH_SIZE, seq_len=SEQ_LEN)
-
-print(f"Training LSTM neural model on high-volatility regimes...")
-lstm_model.fit(features_scaled, target_hv)
-
-model_path = os.path.join(MODEL_DIR, "neural_stack_lstm_pkl")
-joblib.dump({"model": lstm_model, "scaler": scaler}, model_path)
-print(f"LSTM neural stack saved to {model_path}")
